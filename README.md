@@ -42,6 +42,7 @@ output/
 - [`kikd-azure`](kikd-azure/README.md): Azure cloud shell and component registration.
 - [`kikd-azure-pipelines`](kikd-azure-pipelines/README.md): Azure DevOps pipeline DSL and YAML/template renderer.
 - [`kikd-azure-resources`](kikd-azure-resources/README.md): Azure resource DSL, type-safe resource handles, Azure IaC IR, and Bicep/Terraform compiler backends.
+- [`kikd-azure-integration`](kikd-azure-integration/): bridge between pipelines and resources (e.g., passing pipeline parameters into infrastructure stacks).
 - [`kikd-examples`](kikd-examples/README.md): runnable sample project.
 - [`kikd-test-project`](kikd-test-project/README.md): consumer-style integration tests.
 
@@ -53,9 +54,18 @@ The repo is modularized at both the Gradle and package level:
 - `kikd-azure` owns Azure component registration without depending on pipeline or resource implementations.
 - `kikd-azure-pipelines` separates pipeline model types, DSL builders, and YAML backend rendering.
 - `kikd-azure-resources` separates public resource contracts, expression wrappers, infrastructure models, resource DSL builders, built-in resources, IR compilers, and Bicep/Terraform backends.
+- `kikd-azure-integration` bridges `kikd-azure-pipelines` and `kikd-azure-resources`, providing convenience helpers like passing pipeline parameters into infrastructure stacks.
 - `kikd-examples` and `kikd-test-project` consume the published module APIs instead of reaching into implementation details.
 
 Public convenience imports are exposed from `org.kikd.azure.resources`, while implementation-specific resource packages remain available for advanced users.
+
+## Tech Stack
+
+- **Kotlin** 2.3.20 on the JVM
+- **Gradle** with Kotlin DSL and version catalogs
+- **kotlinx-datetime**, **kotlinx-serialization**, **kotlinx-coroutines** from the KotlinX ecosystem
+- **JUnit Platform** for testing
+- Build convention plugins shared via `buildSrc`
 
 ## Quick Example
 
@@ -235,3 +245,16 @@ find output -type f | sort
 - Bicep emits `main.bicep` and `main.bicepparam`.
 - Terraform emits provider/data files and one file per Terraform-capable resource.
 - The project does not run Azure CLI, Bicep validation, Terraform validation, or Azure DevOps validation yet.
+
+## Contributing
+
+Contributions are welcome. By contributing to this repository, you agree that your contributions may be incorporated into both the AGPLv3 and commercial versions of KiKd. You retain copyright to your contributions but grant the project maintainers the right to dual-license them. See [`LICENSE.md`](LICENSE.md) for details.
+
+## License
+
+Copyright © 2026 BitMask LLP. KiKd is dual-licensed:
+
+- **AGPLv3** — for personal, educational, and open-source use. Full text: https://www.gnu.org/licenses/agpl-3.0.en.html
+- **Commercial License** — for proprietary or enterprise use that does not comply with AGPLv3 obligations. Contact **raj.patil@bitmask.in** for commercial licensing.
+
+See [`LICENSE.md`](LICENSE.md) for the full licensing terms and FAQ.

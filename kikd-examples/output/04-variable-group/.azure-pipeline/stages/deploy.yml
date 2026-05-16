@@ -1,0 +1,12 @@
+stages:
+  -
+    stage: Deploy
+    dependsOn: Build
+    jobs:
+      -
+        job: DeployInfra
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          -
+            template: ../steps/deploy-deployinfra.yml

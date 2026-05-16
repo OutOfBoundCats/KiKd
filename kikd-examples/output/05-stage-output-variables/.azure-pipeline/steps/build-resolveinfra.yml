@@ -1,0 +1,12 @@
+steps:
+  -
+    bash: 'echo "##vso[task.setvariable variable=resolvedEnvironment;isOutput=true]dev"
+echo "##vso[task.setvariable variable=resolvedNamePrefix;isOutput=true]kikd"'
+    displayName: Resolve infrastructure values
+    name: setInfraValues
+  -
+    task: PublishPipelineArtifact@1
+    displayName: Publish infra
+    inputs:
+      targetPath: infra
+      artifact: infra

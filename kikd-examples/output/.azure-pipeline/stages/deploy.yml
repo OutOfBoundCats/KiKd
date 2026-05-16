@@ -1,0 +1,14 @@
+stages:
+  -
+    stage: Deploy
+    displayName: Deploy
+    dependsOn: Build
+    jobs:
+      -
+        job: DeployInfra
+        displayName: Deploy infrastructure
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          -
+            template: ../steps/deploy-deployinfra.yml

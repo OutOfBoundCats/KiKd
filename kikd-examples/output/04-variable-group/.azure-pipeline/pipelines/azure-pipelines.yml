@@ -1,0 +1,8 @@
+variables:
+  -
+    group: shared-infra
+stages:
+  -
+    template: ../stages/build.yml
+  -
+    template: ../stages/deploy.yml

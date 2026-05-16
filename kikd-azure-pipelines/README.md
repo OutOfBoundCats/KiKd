@@ -1,0 +1,200 @@
+# kikd-azure-pipelines
+
+`kikd-azure-pipelines` provides the Azure DevOps pipeline DSL and YAML renderer.
+
+## Responsibilities
+
+- Adds the `pipeline { ... }` DSL extension under `azure { ... }`.
+- Models common Azure DevOps pipeline concepts: triggers, parameters, variables, stages, jobs, steps, tasks, and raw escape hatches.
+- Provides typed stage and job handles for dependencies.
+- Provides typed pipeline artifact helpers so the project planner can connect producer and consumer steps.
+- Generates a structured Azure DevOps template layout under `.azure-pipeline/`.
+
+## Example
+
+```kotlin
+azure {
+    pipeline {
+        name = "kikd-demo-\$(Date:yyyyMMdd)\$(Rev:.r)"
+        val infraArtifact = artifact("infra", path = "output/infra")
+
+        trigger {
+            batch = true
+            branches {
+                include("main")
+            }
+            paths {
+                exclude("docs/*")
+            }
+        }
+
+        val vmImage = variable("vmImage", "ubuntu-latest")
+        val sharedInfra = variableGroup("shared-infra")
+        val environment = sharedInfra.variable("ENVIRONMENT")
+        parameter("environment", default = "dev", values = listOf("dev", "prod"))
+
+        val build = stage("Build") {
+            val compile = job("Compile") {
+                pool(vmImage.macroReference())
+                checkout()
+                script("./gradlew check")
+                publishPipelineArtifact(infraArtifact)
+            }
+
+            job("Package") {
+                dependsOn(compile)
+                pool(vmImage.macroReference())
+                script("./gradlew jar")
+            }
+        }
+
+        stage("Deploy") {
+            dependsOn(build)
+            job("DeployApp") {
+                pool(vmImage.macroReference())
+                downloadPipelineArtifact(infraArtifact)
+                deployBicep(stackName = "main", artifact = infraArtifact)
+            }
+        }
+    }
+}
+```
+
+Variable groups return a handle so their Azure DevOps variable names only need to be written once:
+
+```kotlin
+val sharedInfra = variableGroup("shared-infra")
+val environment = sharedInfra.variable("ENVIRONMENT")
+
+deployAzd(
+    stackName = "main",
+    artifact = infraArtifact,
+    params = mapOf("environment" to environment.macroReference()),
+)
+```
+
+Inline variables return the same kind of reusable handle:
+
+```kotlin
+val environment = variable("environment", "dev")
+
+deployAzd(
+    stackName = "main",
+    artifact = infraArtifact,
+    params = mapOf("environment" to environment.macroReference()),
+)
+```
+
+Output variables from an earlier stage can be declared once, attached to a named raw shell step, and mapped into inline variables before later deployment steps use them:
+
+```kotlin
+val environmentOutput = stageOutputVariable("environment")
+
+val build = stage("Build") {
+    job("ResolveInfra") {
+        bash(
+            "echo \"##vso[task.setvariable variable=resolvedEnvironment;isOutput=true]dev\"",
+            stageOutput(environmentOutput, "resolvedEnvironment"),
+        ) {
+            raw("name", "setInfraValues")
+        }
+    }
+}
+
+stage("Deploy") {
+    dependsOn(build)
+    val environment = variable(environmentOutput)
+
+    job("DeployInfra") {
+        deployAzd(
+            stackName = "main",
+            artifact = infraArtifact,
+            params = mapOf("environment" to environment.macroReference()),
+        )
+    }
+}
+```
+
+## Type-Safe Dependencies
+
+`stage(...)` returns `PipelineStage`:
+
+```kotlin
+val build = stage("Build") { ... }
+
+stage("Deploy") {
+    dependsOn(build)
+}
+```
+
+`job(...)` returns `PipelineJob`:
+
+```kotlin
+val compile = job("Compile") { ... }
+
+job("Test") {
+    dependsOn(compile)
+}
+```
+
+Raw `dependsOn` values are still possible through the public `dependsOn` property, but object handles are preferred.
+
+## Artifacts And Deploy Steps
+
+Use `artifact(...)` to create a typed artifact reference. Publishing and downloading that reference adds graph edges between the producing and consuming steps:
+
+```kotlin
+val infra = artifact("infra", path = "output/infra")
+
+job("BuildApp") {
+    publishPipelineArtifact(infra)
+}
+
+job("DeployApp") {
+    downloadPipelineArtifact(infra)
+    deployBicep(stackName = "main", artifact = infra)
+}
+```
+
+## Output Layout
+
+`AzurePipelinesYamlBackend()` generates:
+
+```text
+.azure-pipeline/
+  pipelines/
+    azure-pipelines.yml
+  stages/
+    build.yml
+    deploy.yml
+  steps/
+    build-compile.yml
+    build-package.yml
+    deploy-deployapp.yml
+```
+
+The root pipeline file references stage templates. Stage templates reference step templates.
+
+## Escape Hatches
+
+Use `raw(...)` when the typed DSL does not yet model an Azure DevOps field:
+
+```kotlin
+stage("Build") {
+    raw("condition", "succeeded()")
+}
+```
+
+Use `rawStep(...)` for custom step maps:
+
+```kotlin
+job("Custom") {
+    rawStep(mapOf("template" to "external-template.yml"))
+}
+```
+
+## Known Boundaries
+
+- YAML is generated by the local KiKd writer, not by a full Azure DevOps schema library.
+- The renderer does not validate pipelines against Azure DevOps.
+- The DSL intentionally covers common pipeline authoring patterns first and uses raw fields for long-tail schema coverage.

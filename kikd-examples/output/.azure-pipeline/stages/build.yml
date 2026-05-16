@@ -1,0 +1,13 @@
+stages:
+  -
+    stage: Build
+    displayName: Build
+    jobs:
+      -
+        job: BuildApp
+        displayName: Build application
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          -
+            template: ../steps/build-buildapp.yml

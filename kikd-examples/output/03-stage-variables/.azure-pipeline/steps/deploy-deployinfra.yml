@@ -1,0 +1,14 @@
+steps:
+  -
+    task: DownloadPipelineArtifact@2
+    displayName: Download infra
+    inputs:
+      buildType: current
+      artifactName: infra
+      targetPath: infra
+  -
+    bash: azd provision
+    displayName: Deploy main infrastructure with azd
+    env:
+      ENVIRONMENT: $(environment)
+      NAMEPREFIX: $(namePrefix)

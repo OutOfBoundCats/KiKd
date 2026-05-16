@@ -1,0 +1,19 @@
+stages:
+  -
+    stage: Deploy
+    dependsOn: Build
+    variables:
+      -
+        name: environment
+        value: $[ stageDependencies.Build.ResolveInfra.outputs['setInfraValues.resolvedEnvironment'] ]
+      -
+        name: namePrefix
+        value: $[ stageDependencies.Build.ResolveInfra.outputs['setInfraValues.resolvedNamePrefix'] ]
+    jobs:
+      -
+        job: DeployInfra
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          -
+            template: ../steps/deploy-deployinfra.yml

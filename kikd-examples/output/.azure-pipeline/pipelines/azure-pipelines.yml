@@ -1,0 +1,26 @@
+name: kikd-demo-$(Date:yyyyMMdd)$(Rev:.r)
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/*
+parameters:
+  -
+    name: environment
+    type: string
+    default: dev
+    values:
+      - dev
+      - prod
+variables:
+  -
+    name: vmImage
+    value: ubuntu-latest
+stages:
+  -
+    template: ../stages/build.yml
+  -
+    template: ../stages/deploy.yml

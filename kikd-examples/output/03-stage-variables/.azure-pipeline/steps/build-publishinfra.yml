@@ -1,0 +1,7 @@
+steps:
+  -
+    task: PublishPipelineArtifact@1
+    displayName: Publish infra
+    inputs:
+      targetPath: infra
+      artifact: infra

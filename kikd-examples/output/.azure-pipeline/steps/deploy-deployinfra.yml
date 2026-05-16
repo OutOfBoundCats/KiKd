@@ -1,0 +1,24 @@
+steps:
+  -
+    task: DownloadPipelineArtifact@2
+    displayName: Download infra
+    inputs:
+      buildType: current
+      artifactName: infra
+      targetPath: output/infra
+  -
+    bash: 'echo "##vso[task.setvariable variable=ENVIRONMENT]$(environment)"
+echo "##vso[task.setvariable variable=NAMEPREFIX]kikd"'
+    displayName: Set infrastructure variables
+  -
+    pwsh: Write-Host "Preparing infra for `$env:ENVIRONMENT"
+    displayName: Prepare infrastructure environment
+    env:
+      ENVIRONMENT: $(ENVIRONMENT)
+      NAMEPREFIX: $(NAMEPREFIX)
+  -
+    bash: azd provision
+    displayName: Deploy main infrastructure with azd
+    env:
+      ENVIRONMENT: $(ENVIRONMENT)
+      NAMEPREFIX: $(NAMEPREFIX)

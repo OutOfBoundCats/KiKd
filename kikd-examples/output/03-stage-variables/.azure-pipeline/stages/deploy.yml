@@ -1,0 +1,19 @@
+stages:
+  -
+    stage: Deploy
+    dependsOn: Build
+    variables:
+      -
+        name: environment
+        value: dev
+      -
+        name: namePrefix
+        value: kikd
+    jobs:
+      -
+        job: DeployInfra
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          -
+            template: ../steps/deploy-deployinfra.yml

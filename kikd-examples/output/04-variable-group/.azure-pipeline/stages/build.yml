@@ -1,0 +1,11 @@
+stages:
+  -
+    stage: Build
+    jobs:
+      -
+        job: PublishInfra
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          -
+            template: ../steps/build-publishinfra.yml

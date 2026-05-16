@@ -1,0 +1,12 @@
+steps:
+  -
+    checkout: self
+  -
+    script: ./gradlew check
+    displayName: Run checks
+  -
+    task: PublishPipelineArtifact@1
+    displayName: Publish infra
+    inputs:
+      targetPath: output/infra
+      artifact: infra

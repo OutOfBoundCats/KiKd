@@ -1,0 +1,4 @@
+name: kikd-project
+infra:
+  provider: bicep
+  path: infra
